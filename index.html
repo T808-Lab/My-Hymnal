@@ -3,285 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Open Hymnal Reader</title>
-    <!-- Apple PWA Meta Tags to make it look like a native app -->
+    <title>Hymnal for iPad</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Hymnal Pro">
-    
-    <!-- Tailwind CSS for modern iPad UI -->
     <script src="https://tailwindcss.com"></script>
-    <!-- PDF.js Framework for fluid, high-res sheet music rendering and scaling -->
     <script src="https://cloudflare.com"></script>
-
+    
     <style>
-        /* Smooth native-like behaviors for iOS */
+        @import url('https://googleapis.com');
+        
         body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FAF6F0;
+            color: #2D221E;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
+        .serif-title {
+            font-family: 'Cinzel', Georgia, serif;
+        }
+        .brand-bg { background-color: #5C1D24; }
+        .brand-text { color: #5C1D24; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* Native iOS momentum scrolling */
-        .ios-scroll { -webkit-overflow-scrolling: touch; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col select-none">
+<body class="h-screen w-screen overflow-hidden flex flex-col">
 
-    <!-- APP HEADER -->
-    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 px-6 py-4 flex items-center justify-between pt-12 z-10">
-        <div class="flex items-center gap-4">
-            <button id="backBtn" class="hidden text-amber-400 font-medium flex items-center gap-1 active:scale-95 transition">
-                <span>◀</span> Back to Index
-            </button>
-            <h1 id="appTitle" class="text-xl font-bold tracking-tight text-amber-400">📖 Open Hymnal 2014</h1>
+    <!-- PREMIUM NAVIGATION BAR -->
+    <nav class="bg-[#FAF6F0] border-b border-[#E8DFD3] px-8 py-4 flex items-center justify-between pt-10 z-30 shrink-0">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
+            <div class="brand-bg text-white p-2 rounded-xl text-lg font-bold">📖</div>
+            <span class="serif-title text-xl font-bold tracking-wide brand-text">Hymnal</span>
         </div>
-        <div class="flex items-center gap-4">
-            <button id="bookmarkBtn" class="hidden text-2xl active:scale-95 transition">☆</button>
-            <span id="pageIndicator" class="hidden text-sm text-slate-400 font-mono">Page 1 / 1</span>
+        <div class="flex items-center gap-2 bg-[#F3EBE0] p-1.5 rounded-full text-sm font-medium">
+            <button id="nav-home" onclick="switchTab('home')" class="px-5 py-2 rounded-full transition brand-bg text-white shadow-sm">Home</button>
+            <button id="nav-search" onclick="switchTab('search')" class="px-5 py-2 rounded-full transition text-[#5C4D46] hover:bg-[#EADFCF]">Search</button>
+            <button id="nav-contents" onclick="switchTab('contents')" class="px-5 py-2 rounded-full transition text-[#5C4D46] hover:bg-[#EADFCF]">Contents</button>
+            <button id="nav-favorites" onclick="switchTab('favorites')" class="px-5 py-2 rounded-full transition text-[#5C4D46] hover:bg-[#EADFCF]">Favorites</button>
         </div>
-    </header>
+    </nav>
 
-    <!-- MAIN INTERACTIVE CONTAINER -->
-    <main class="flex-1 relative overflow-hidden flex">
-        
-        <!-- DASHBOARD VIEW (INDEX / SEARCH / CATEGORIES) -->
-        <div id="dashboardView" class="w-full h-full flex flex-col p-6 gap-6 ios-scroll overflow-y-auto">
-            
-            <!-- Search Control -->
-            <div class="relative w-full max-w-xl mx-auto">
-                <input type="text" id="searchInput" placeholder="🔎 Search by hymn title or number..." 
-                       class="w-full bg-slate-800 border border-slate-700 rounded-2xl py-4 px-6 text-lg focus:outline-none focus:border-amber-500 transition shadow-inner">
+    <!-- VIEWS ENGINE CONTAINER -->
+    <main class="flex-1 relative overflow-hidden">
+
+        <!-- 1. HOME SCREEN VIEW -->
+        <div id="view-home" class="absolute inset-0 overflow-y-auto p-8 flex flex-col gap-10">
+            <!-- Hero Banner card matched to layout layout -->
+            <div class="brand-bg rounded-[2rem] p-12 text-white relative overflow-hidden shadow-xl max-w-6xl mx-auto w-full">
+                <p class="text-xs uppercase tracking-[0.2em] opacity-60 font-semibold mb-3">A Hymnal for iPad</p>
+                <h2 class="serif-title text-5xl font-normal leading-tight mb-4 max-w-xl">Sing with understanding</h2>
+                <p class="opacity-80 max-w-lg text-base leading-relaxed mb-8">Browse by category, search by title or number, bookmark your favorites, and view sheet music with pinch-to-zoom — all offline.</p>
+                <button onclick="switchTab('search')" class="bg-white text-[#2D221E] px-6 py-4 rounded-2xl font-medium flex items-center gap-3 shadow-md active:scale-95 transition">
+                    <span>🔍</span> Search hymns
+                </button>
             </div>
 
-            <!-- Dashboard Content Layout -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto w-full">
-                <!-- Left Column: Table of Contents & Bookmarks -->
-                <div class="md:col-span-2 flex flex-col gap-4">
-                    <h2 class="text-lg font-semibold text-slate-400 tracking-wider uppercase">📑 Hymns List</h2>
-                    <div id="hymnListContainer" class="bg-slate-800 rounded-2xl divide-y divide-slate-700 overflow-hidden shadow-xl">
-                        <!-- Dynamic list renders here -->
-                    </div>
-                </div>
-
-                <!-- Right Column: Quick Categories -->
-                <div class="flex flex-col gap-4">
-                    <h2 class="text-lg font-semibold text-slate-400 tracking-wider uppercase">⭐ Bookmarks & Categories</h2>
-                    <div id="favoritesSection" class="bg-slate-800 p-4 rounded-2xl hidden shadow-xl mb-2 border border-amber-500/20">
-                        <h3 class="text-amber-400 font-bold mb-2 flex items-center gap-2">⭐ My Bookmarks</h3>
-                        <div id="favoritesList" class="flex flex-col gap-2"></div>
-                    </div>
-                    <div id="categoryContainer" class="grid grid-cols-1 gap-3">
-                        <!-- Categories automatically render here -->
+            <!-- Dashboard Sub-Lists -->
+            <div class="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="serif-title text-xl font-bold mb-4 opacity-80">Categories</h3>
+                    <div onclick="switchTab('contents')" class="bg-white border border-[#E8DFD3] p-6 rounded-2xl flex items-center justify-between cursor-pointer hover:shadow-md transition">
+                        <div>
+                            <h4 class="font-semibold text-lg">All Public Hymns</h4>
+                            <p class="text-sm opacity-60 mt-1">Open Hymnal 2014 Edition</p>
+                        </div>
+                        <span class="text-xl opacity-40">➔</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SHEET MUSIC VIEWER (PIANO PLAYER MODE) -->
-        <div id="sheetMusicView" class="hidden w-full h-full relative bg-slate-950 flex items-center justify-center">
-            <!-- Left/Right Transparent tap regions for rapid piano page turning -->
-            <div id="prevZone" class="absolute left-0 top-0 w-1/4 h-full z-20 cursor-w-resize"></div>
-            <div id="nextZone" class="absolute right-0 top-0 w-1/4 h-full z-20 cursor-e-resize"></div>
-
-            <!-- Render viewport supporting pinch/zoom -->
-            <div id="canvasWrapper" class="w-full h-full overflow-auto flex items-start justify-center p-2 ios-scroll no-scrollbar">
-                <canvas id="pdfCanvas" class="shadow-2xl max-w-full rounded bg-white"></canvas>
+        <!-- 2. SEARCH ENGINE VIEW -->
+        <div id="view-search" class="absolute inset-0 hidden overflow-y-auto p-8 flex flex-col gap-6">
+            <div class="max-w-3xl mx-auto w-full">
+                <input type="text" id="searchInput" placeholder="Search by number, title, or keyword..." 
+                       class="w-full bg-white border border-[#E8DFD3] rounded-2xl py-4 px-6 text-lg focus:outline-none focus:border-[#5C1D24] shadow-sm transition">
+                <div id="searchResults" class="mt-6 bg-white border border-[#E8DFD3] rounded-2xl divide-y divide-[#E8DFD3] overflow-hidden shadow-sm"></div>
             </div>
         </div>
+
+        <!-- 3. ALPHABETICAL/NUMERICAL CONTENTS VIEW -->
+        <div id="view-contents" class="absolute inset-0 hidden overflow-y-auto p-8">
+            <div class="max-w-4xl mx-auto w-full flex flex-col gap-8">
+                <div class="flex items-center justify-between border-b border-[#E8DFD3] pb-4">
+                    <h2 class="serif-title text-3xl font-bold brand-text">Table of Contents</h2>
+                    <div class="bg-[#F3EBE0] p-1 rounded-xl text-xs font-semibold flex gap-1">
+                        <button id="sort-alpha" onclick="renderContents('alpha')" class="px-4 py-1.5 rounded-lg bg-white shadow-sm brand-text">Alphabetical</button>
+                        <button id="sort-num" onclick="renderContents('num')" class="px-4 py-1.5 rounded-lg text-[#5C4D46]">By Number</button>
+                    </div>
+                </div>
+                <div id="contentsGrid" class="flex flex-col gap-8"></div>
+            </div>
+        </div>
+
+        <!-- 4. FAVORITES VIEW -->
+        <div id="view-favorites" class="absolute inset-0 hidden overflow-y-auto p-8">
+            <div class="max-w-3xl mx-auto w-full">
+                <h2 class="serif-title text-3xl font-bold brand-text mb-6">Bookmarked Scores</h2>
+                <div id="favoritesList" class="bg-white border border-[#E8DFD3] rounded-2xl divide-y divide-[#E8DFD3] overflow-hidden shadow-sm"></div>
+            </div>
+        </div>
+
+        <!-- 5. PIANO SHEET MUSIC SHEET PLAYER SCREEN -->
+        <div id="view-music" class="absolute inset-0 hidden bg-[#1A1513] flex flex-col z-40">
+            <div class="bg-[#2D221E] px-6 py-4 flex items-center justify-between text-white">
+                <button onclick="closeMusicViewer()" class="text-[#EADFCF] font-medium flex items-center gap-2">◀ Back</button>
+                <h2 id="musicTitle" class="serif-title font-bold text-lg text-amber-100">Hymn</h2>
+                <button id="musicFavBtn" onclick="toggleFavoriteCurrent()" class="text-2xl">☆</button>
+            </div>
+            <div class="flex-1 overflow-auto flex items-start justify-center p-4 relative no-scrollbar" id="canvasScrollArea">
+                <div id="prevPageZone" onclick="turnPage(-1)" class="absolute left-0 top-0 w-1/5 h-full cursor-w-resize z-50"></div>
+                <div id="nextPageZone" onclick="turnPage(1)" class="absolute right-0 top-0 w-1/5 h-full cursor-e-resize z-50"></div>
+                <canvas id="pdfCanvas" class="bg-white shadow-2xl rounded max-w-full"></canvas>
+            </div>
+        </div>
+
     </main>
 
-    <!-- HYMN DATA INDEX MATRIX -->
+    <!-- CORE DATA MATRIX ENGINE -->
     <script>
-        // Mapped structural indices referencing the OpenHymnal2014.06.pdf configuration
+        // Mapped structural entries referencing the OpenHymnal2014.06.pdf configuration
         const hymnDatabase = [
-            { id: 1, number: "1", title: "Abide, O Dearest Jesus", page: 5, category: "Lord's Day & Closing" },
-            { id: 2, number: "2", title: "Abide With Me", page: 7, category: "Lord's Day & Closing" },
-            { id: 3, number: "10", title: "All Creatures of Our God and King", page: 17, category: "Praise & Adoration" },
-            { id: 4, number: "12", title: "All Glory, Laud, and Honor", page: 21, category: "Palm Sunday" },
-            { id: 5, number: "14", title: "All My Heart This Night Rejoices", page: 24, category: "Christmas" },
-            { id: 6, number: "25", title: "Amazing Grace", page: 38, category: "Grace & Salvation" },
-            { id: 7, number: "30", title: "Angels We Have Heard On High", page: 44, category: "Christmas" },
-            { id: 8, number: "36", title: "Be Still My Soul", page: 51, category: "Comfort & Trust" },
-            { id: 9, number: "37", title: "Be Thou My Vision", page: 53, category: "Christian Life" },
-            { id: 10, number: "50", title: "Blessed Assurance", page: 71, category: "Assurance & Peace" }
-            // Note: You can ask an AI text tool later to read the text list of Open Hymnal 2014 
-            // and format remaining lines exactly like this array structure to fill it up!
+            { number: 1, title: "Abide, O Dearest Jesus", page: 5 },
+            { number: 2, title: "Abide With Me", page: 7 },
+            { number: 10, title: "All Creatures of Our God and King", page: 17 },
+            { number: 12, title: "All Glory, Laud, and Honor", page: 21 },
+            { number: 14, title: "All My Heart This Night Rejoices", page: 24 },
+            { number: 25, title: "Amazing Grace", page: 38 },
+            { number: 30, title: "Angels We Have Heard On High", page: 44 },
+            { number: 36, title: "Be Still My Soul", page: 51 },
+            { number: 37, title: "Be Thou My Vision", page: 53 },
+            { number: 50, title: "Blessed Assurance", page: 71 }
         ];
 
-        // System Core Settings
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cloudflare.com';
         let pdfDoc = null;
-        let currentHymn = null;
-        let currentScale = window.innerWidth < 1024 ? 1.4 : 2.0; // Optimized scale footprints for iPad retina displays
-        let favorites = JSON.parse(localStorage.getItem('hymnal_favs')) || [];
+        let activeHymn = null;
+        let activePage = 1;
+        let bookmarks = JSON.parse(localStorage.getItem('hymn_bookmarks')) || [];
 
-        // App Views 
-        const dashboardView = document.getElementById('dashboardView');
-        const sheetMusicView = document.getElementById('sheetMusicView');
-        const backBtn = document.getElementById('backBtn');
-        const appTitle = document.getElementById('appTitle');
-        const bookmarkBtn = document.getElementById('bookmarkBtn');
-        const pageIndicator = document.getElementById('pageIndicator');
+        // Tab Navigation Management Engine
+        function switchTab(tabId) {
+            ['home', 'search', 'contents', 'favorites'].forEach(view => {
+                document.getElementById(`view-${view}`).classList.add('hidden');
+                document.getElementById(`nav-${view}`).className = "px-5 py-2 rounded-full transition text-[#5C4D46] hover:bg-[#EADFCF]";
+            });
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`).className = "px-5 py-2 rounded-full transition brand-bg text-white shadow-sm";
+            if(tabId === 'contents') renderContents('alpha');
+            if(tabId === 'favorites') renderFavoritesView();
+        }
+
+        // Contents Structural Categorizer Builder
+        function renderContents(mode) {
+            const grid = document.getElementById('contentsGrid');
+            const btnAlpha = document.getElementById('sort-alpha');
+            const btnNum = document.getElementById('sort-num');
+            grid.innerHTML = "";
+
+            if (mode === 'alpha') {
+                btnAlpha.className = "px-4 py-1.5 rounded-lg bg-white shadow-sm brand-text";
+            btnNum.className = "px-4 py-1.5 rounded-lg text-[#5C4D46]";
+                
+            // Sort Alphabetically
+            const sorted = [...hymnDatabase].sort((a,b) => a.title.localeCompare(b.title));
+            const groups = {};
+            sorted.forEach(hymn => {
+                const firstLetter = hymn.title.charAt(0).toUpperCase();
+                if (!groups[firstLetter]) groups[firstLetter] = [];
+                groups[firstLetter].push(hymn);
+            });
+
+            for (let letter in groups) {
+                let section = document.createElement('div');
+                section.className = "flex flex-col gap-3";
+                section.innerHTML = `
+                    <div class="serif-title text-xl font-bold brand-text border-b border-[#E8DFD3] pb-1 w-12 text-center bg-[#F3EBO0] rounded-lg">${letter}</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">${groups[letter].map(h => renderHymnRowCard(h)).join('')}</div>
+                `;
+                grid.appendChild(section);
+            }
+        } else {
+            btnNum.className = "px-4 py-1.5 rounded-lg bg-white shadow-sm brand-text";
+            btnAlpha.className = "px-4 py-1.5 rounded-lg text-[#5C4D46]";
+
+            // Sort Numerically
+            const sorted = [...hymnDatabase].sort((a,b) => a.number - b.number);
+            let section = document.createElement('div');
+            section.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
+            section.innerHTML = sorted.map(h => renderHymnRowCard(h)).join('');
+            grid.appendChild(section);
+        }
+    }
+
+    function renderHymnRowCard(hymn) {
+        return `
+            <div onclick="openHymnSheet(${hymn.number})" class="bg-white border border-[#E8DFD3] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:border-[#5C1D24]/40 hover:shadow-sm transition active:scale-[0.99]">
+                <div class="flex items-center gap-4 min-w-0">
+                    <span class="font-mono font-bold brand-text text-base w-8">${hymn.number}</span>
+                    <span class="font-medium text-[#2D221E] truncate pr-2">${hymn.title}</span>
+                </div>
+                <span class="text-xs font-mono opacity-40 shrink-0">p. ${hymn.page}</span>
+            </div>
+        `;
+    }
+
+    // Native Piano Canvas Core View Engine
+    async function openHymnSheet(number) {
+        activeHymn = hymnDatabase.find(h => h.number === number);
+        if (!activeHymn || !pdfDoc) return;
+        
+        document.getElementById('view-music').classList.remove('hidden');
+        document.getElementById('musicTitle').textContent = `${activeHymn.number}. ${activeHymn.title}`;
+        activePage = activeHymn.page;
+        updateFavBtnUI();
+        await renderPDFPage(activePage);
+    }
+
+    async function renderPDFPage(pageNum) {
         const canvas = document.getElementById('pdfCanvas');
         const ctx = canvas.getContext('2d');
+        const page = await pdfDoc.getPage(pageNum);
+        
+        // Render high DPI canvas maps optimized perfectly for pinch zooming on Retina displays
+        const viewport = page.getViewport({ scale: 2.2 });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
 
-        // Initialize Core Engine
-        async function loadPDF() {
-            try {
-                // Must have downloaded 'hymnal.pdf' inside the folder root
-                pdfDoc = await pdfjsLib.getDocument('hymnal.pdf').promise;
-                renderDashboardList(hymnDatabase);
-                renderCategories();
-                renderFavorites();
-            } catch (err) {
-                alert("Could not load hymnal.pdf. Make sure it is saved in the exact same directory folder as this web file.");
-            }
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        document.getElementById('canvasScrollArea').scrollTop = 0;
+    }
+
+    function turnPage(direction) {
+        activePage += direction;
+        if (activePage < 1) activePage = 1;
+        if (activePage > pdfDoc.numPages) activePage = pdfDoc.numPages;
+        renderPDFPage(activePage);
+    }
+
+    function closeMusicViewer() {
+        document.getElementById('view-music').classList.add('hidden');
+    }
+
+    // Search Engine Filter Handler
+    document.getElementById('searchInput').oninput = (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const resultsBox = document.getElementById('searchResults');
+        if(!query) { resultsBox.innerHTML = ""; return; }
+
+        const matches = hymnDatabase.filter(h => 
+            h.title.toLowerCase().includes(query) || h.number.toString().includes(query)
+        );
+        resultsBox.innerHTML = matches.map(h => `
+            <div onclick="openHymnSheet(${h.number})" class="p-4 hover:bg-[#F3EBE0] cursor-pointer flex justify-between items-center transition">
+                <span><strong class="brand-text font-mono">${h.number}.</strong> ${h.title}</span>
+                <span class="text-xs opacity-50">Page ${h.page}</span>
+            </div>
+        `).join('') || `<div class="p-4 text-center opacity-50 text-sm">No matching hymns found</div>`;
+    };
+
+    // Bookmarks Core Management Engine
+    function toggleFavoriteCurrent() {
+        if (!activeHymn) return;
+        const idx = bookmarks.indexOf(activeHymn.number);
+        if (idx > -1) bookmarks.splice(idx, 1);
+        else bookmarks.push(activeHymn.number);
+        localStorage.setItem('hymn_bookmarks', JSON.stringify(bookmarks));
+        updateFavBtnUI();
+    }
+
+    function updateFavBtnUI() {
+        const btn = document.getElementById('musicFavBtn');
+        if (activeHymn && bookmarks.includes(activeHymn.number)) {
+            btn.textContent = "★"; btn.className = "text-2xl text-amber-400";
+        } else {
+            btn.textContent = "☆"; btn.className = "text-2xl text-white/60";
         }
+    }
 
-        function renderDashboardList(songs) {
-            const container = document.getElementById('hymnListContainer');
-            container.innerHTML = songs.map(song => `
-                <div onclick="openHymn(${song.id})" class="flex items-center justify-between p-4 hover:bg-slate-700/50 active:bg-slate-700 transition cursor-pointer">
-                    <div class="flex items-center gap-4">
-                        <span class="text-amber-500 font-mono font-bold text-lg w-10">${song.number}</span>
-                        <div>
-                            <div class="font-semibold text-slate-100 text-lg">${song.title}</div>
-                            <div class="text-sm text-slate-400">${song.category}</div>
-                        </div>
-                    </div>
-                    <span class="text-slate-500 text-sm">p. ${song.page} ➔</span>
-                </div>
-            `).join('');
+    function renderFavoritesView() {
+        const box = document.getElementById('favoritesList');
+        const favHymns = hymnDatabase.filter(h => bookmarks.includes(h.number));
+        box.innerHTML = favHymns.map(h => `
+            <div onclick="openHymnSheet(${h.number})" class="p-4 bg-white hover:bg-[#F3EBE0] cursor-pointer flex justify-between items-center transition">
+                <span><strong class="brand-text font-mono">${h.number}.</strong> ${h.title}</span>
+                <span class="text-sm opacity-40">➔</span>
+            </div>
+        `).join('') || `<div class="p-6 text-center opacity-50 text-sm bg-white">Your bookmarked hymns will show up here</div>`;
+    }
+
+    // Boot-Up Initialization sequence
+    async function init() {
+        try {
+            pdfDoc = await pdfjsLib.getDocument('hymnal.pdf').promise;
+        } catch (err) {
+            alert("Could not load hymnal.pdf. Make sure it is in your GitHub folder and named exactly lowercase 'hymnal.pdf'.");
         }
-
-        function renderCategories() {
-            const categories = [...new Set(hymnDatabase.map(s => s.category))];
-            const container = document.getElementById('categoryContainer');
-            container.innerHTML = categories.map(cat => `
-                <button onclick="filterCategory('${cat}')" class="bg-slate-800 text-left p-4 rounded-xl border border-slate-700 hover:border-amber-500/40 active:scale-[0.98] transition">
-                    <span class="font-medium text-slate-200">${cat}</span>
-                </button>
-            `).join('') + `<button onclick="filterCategory('All')" class="bg-slate-800/40 text-left p-4 rounded-xl border border-dashed border-slate-700 text-center text-slate-400 font-medium">Show All Hymns</button>`;
-        }
-
-        function filterCategory(cat) {
-            if (cat === 'All') return renderDashboardList(hymnDatabase);
-            const filtered = hymnDatabase.filter(s => s.category === cat);
-            renderDashboardList(filtered);
-        }
-
-        function renderFavorites() {
-            const favSection = document.getElementById('favoritesSection');
-            const favList = document.getElementById('favoritesList');
-            if (favorites.length === 0) {
-                favSection.classList.add('hidden');
-                return;
-            }
-            favSection.classList.remove('hidden');
-            const favSongs = hymnDatabase.filter(s => favorites.includes(s.id));
-            favList.innerHTML = favSongs.map(song => `
-                <div onclick="openHymn(${song.id})" class="bg-slate-700/40 hover:bg-slate-700 p-3 rounded-xl flex items-center justify-between cursor-pointer transition">
-                    <span class="font-medium text-slate-200 text-sm truncate">${song.number}. ${song.title}</span>
-                    <span class="text-xs text-amber-400 font-mono">p.${song.page}</span>
-                </div>
-            `).join('');
-        }
-
-        // PDF Renderer Logic
-        async function renderSheetPage(pageNumber) {
-            pageIndicator.textContent = `Page ${pageNumber} / ${pdfDoc.numPages}`;
-            const page = await pdfDoc.getPage(pageNumber);
-            const viewport = page.getViewport({ scale: currentScale });
-            
-            // Adjust canvas to high resolution sizing specs
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            const renderContext = {
-                canvasContext: ctx,
-                viewport: viewport
-            };
-            await page.render(renderContext).promise;
-        }
-
-        window.openHymn = async function(id) {
-            currentHymn = hymnDatabase.find(s => s.id === id);
-            dashboardView.classList.add('hidden');
-            sheetMusicView.classList.remove('hidden');
-            backBtn.classList.remove('hidden');
-            bookmarkBtn.classList.remove('hidden');
-            pageIndicator.classList.remove('hidden');
-            
-            appTitle.textContent = `${currentHymn.number}. ${currentHymn.title}`;
-            updateBookmarkBtnUI();
-            await renderSheetPage(currentHymn.page);
-        };
-
-        // Navigation Back to Index Dashboard
-        backBtn.onclick = () => {
-            dashboardView.classList.remove('hidden');
-            sheetMusicView.classList.add('hidden');
-            backBtn.classList.add('hidden');
-            bookmarkBtn.classList.add('hidden');
-            pageIndicator.classList.add('hidden');
-            appTitle.textContent = "📖 Open Hymnal 2014";
-            renderFavorites();
-        };
-
-        // Bookmarking Engine
-        bookmarkBtn.onclick = () => {
-            if (!currentHymn) return;
-            const index = favorites.indexOf(currentHymn.id);
-            if (index > -1) {
-                favorites.splice(index, 1);
-            } else {
-                favorites.push(currentHymn.id);
-            }
-            localStorage.setItem('hymnal_favs', JSON.stringify(favorites));
-            updateBookmarkBtnUI();
-        };
-
-        function updateBookmarkBtnUI() {
-            if (currentHymn && favorites.includes(currentHymn.id)) {
-                bookmarkBtn.textContent = "★";
-                bookmarkBtn.className = "text-2xl text-amber-400 active:scale-95 transition";
-            } else {
-                bookmarkBtn.textContent = "☆";
-                bookmarkBtn.className = "text-2xl text-slate-400 active:scale-95 transition";
-            }
-        }
-
-        // Tap-to-Turn Pages (Piano-friendly zone bounds)
-        document.getElementById('nextZone').onclick = (e) => {
-            e.stopPropagation();
-            if (currentHymn && currentHymn.page < pdfDoc.numPages) {
-                currentHymn.page++;
-                renderSheetPage(currentHymn.page);
-            }
-        };
-
-        document.getElementById('prevZone').onclick = (e) => {
-            e.stopPropagation();
-            if (currentHymn && currentHymn.page > 1) {
-                currentHymn.page--;
-                renderSheetPage(currentHymn.page);
-            }
-        };
-
-        // Filter Matrix Engine Search Input
-        document.getElementById('searchInput').oninput = (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            const filtered = hymnDatabase.filter(s => 
-                s.title.toLowerCase().includes(query) || 
-                s.number.includes(query) ||
-                s.category.toLowerCase().includes(query)
-            );
-            renderDashboardList(filtered);
-        };
-
-        // Fire Load sequences
-        loadPDF();
+    }
+    init();
     </script>
 </body>
 </html>
